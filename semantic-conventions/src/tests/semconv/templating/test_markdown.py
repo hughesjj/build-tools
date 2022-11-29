@@ -17,9 +17,10 @@ import os
 import unittest
 from pathlib import Path
 from typing import Optional, Sequence
+from unittest.mock import patch
 
 from opentelemetry.semconv.model.semantic_convention import SemanticConventionSet
-from opentelemetry.semconv.templating.markdown import MarkdownRenderer
+from opentelemetry.semconv.templating.markdown import MarkdownRenderer, VisualDiffer
 from opentelemetry.semconv.templating.markdown.options import MarkdownOptions
 
 
@@ -128,6 +129,43 @@ class TestCorrectMarkdown(unittest.TestCase):
 
     def test_scope(self):
         self.check("markdown/scope/")
+
+    def testVisualDiffer(self):
+        with open(
+            self.get_file_path("markdown/table_generation_conflict/input-1.md")
+        ) as fin:
+            sample_1 = fin.read()
+        with open(
+            self.get_file_path("markdown/table_generation_conflict/input-2.md")
+        ) as fin:
+            sample_2 = fin.read()
+        with open(
+            self.get_file_path(
+                "markdown/table_generation_conflict/expected-no-colors.md"
+            )
+        ) as fin:
+            expected = fin.read()
+        actual = VisualDiffer.visual_diff(sample_1, sample_2)
+        self.assertEqual(expected, actual)
+
+    @patch.dict(os.environ, {"COLORED_DIFF": "true"})
+    def testColoredVisualDiffer(self):
+        with open(
+            self.get_file_path("markdown/table_generation_conflict/input-1.md")
+        ) as fin:
+            sample_1 = fin.read()
+        with open(
+            self.get_file_path("markdown/table_generation_conflict/input-2.md")
+        ) as fin:
+            sample_2 = fin.read()
+        with open(
+            self.get_file_path(
+                "markdown/table_generation_conflict/expected-with-colors.md"
+            )
+        ) as fin:
+            expected = fin.read()
+        actual = VisualDiffer.visual_diff(sample_1, sample_2)
+        self.assertEqual(expected, actual)
 
     def check(
         self,
